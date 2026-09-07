@@ -7,6 +7,8 @@ namespace Develate\MusecodeCli;
 use Develate\MusecodeCli\Exception\InvalidOptions;
 use Develate\MusecodeCli\Exception\MuseNotFound;
 use Develate\MusecodeCli\Process\MuseExecutable;
+use Develate\MusecodeCli\Quota\PtyQuotaReader;
+use Develate\MusecodeCli\Quota\Quota;
 use Develate\MusecodeCli\Transport\ExecTransport;
 use Develate\MusecodeCli\Transport\RunMode;
 use Develate\MusecodeCli\Transport\Transport;
@@ -138,6 +140,11 @@ final class Muse
         return MuseExecutable::isAvailable($this->binary);
     }
 
+    public function quota(): Quota
+    {
+        return (new PtyQuotaReader)->read($this->binary, $this->env, $this->timeout ?? 30.0);
+    }
+
     /**
      * Whether this binary exists and answers a command this SDK relies on.
      *
@@ -146,7 +153,7 @@ final class Muse
      */
     public function isCompatible(): bool
     {
-        if (!$this->isAvailable()) {
+        if (! $this->isAvailable()) {
             return false;
         }
 
