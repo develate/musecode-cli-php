@@ -3,7 +3,6 @@
     "description": "A resilient PHP SDK for controlling the Muse Code CLI.",
     "type": "library",
     "license": "MIT",
-    "version": "1.0.0",
     "autoload": {
         "psr-4": {
             "Develate\\MusecodeCli\\": "src/"
