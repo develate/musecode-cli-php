@@ -84,3 +84,43 @@ $muse->authFilePath();    // where this client keeps its credentials
 
 Pointing `HOME` (or `XDG_CONFIG_HOME`) at another directory isolates one local
 identity from another, which is how hosts keep several accounts apart.
+
+## MCP servers
+
+`mcp()` manages the native `mcp_servers` entries in Muse's `settings.json`.
+It uses this client's `XDG_CONFIG_HOME`, falling back to `HOME/.config`, just
+like authentication. Configuration is shared by every run using that home;
+changes take effect when the next CLI process starts, including resumed turns.
+
+```php
+$mcp = $muse->mcp();
+$mcp->add('local-tools', [
+    'transport' => 'stdio',
+    'command' => 'node',
+    'args' => ['/opt/tools/server.js'],
+    'env' => ['SERVICE_KEY' => 'your-key'],
+]);
+$mcp->add('remote-tools', [
+    'transport' => 'streamable_http',
+    'url' => 'https://example.com/mcp',
+    'headers' => ['Authorization' => 'Bearer your-token'],
+    'mode' => 'optional',
+]);
+
+$servers = $mcp->list(); // configuration keyed by name, not live connection status
+$mcp->disable('local-tools');
+$mcp->enable('local-tools');
+$mcp->remove('remote-tools');
+$mcp->settingsFilePath();
+```
+
+Adding an existing name replaces its server definition. Removing a missing name
+is harmless; enabling or disabling one throws `InvalidOptions`. Native server
+fields are passed through, with basic validation for transports and common
+fields. Muse performs the remaining configuration and connection validation.
+
+Writes preserve unrelated settings, create new files with `schema_version: 1`,
+and use an atomic replacement with owner-only permissions. Malformed settings
+are rejected without overwriting them. SDK writers coordinate through a lock
+file; external editors must avoid concurrent writes. For isolated server sets,
+use a separate configuration home and authenticate that Muse client there.

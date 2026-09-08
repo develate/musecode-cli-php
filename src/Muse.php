@@ -6,6 +6,7 @@ namespace Develate\MusecodeCli;
 
 use Develate\MusecodeCli\Exception\InvalidOptions;
 use Develate\MusecodeCli\Exception\MuseNotFound;
+use Develate\MusecodeCli\Mcp\Mcp;
 use Develate\MusecodeCli\Models\ModelInfo;
 use Develate\MusecodeCli\Models\PtyModelReader;
 use Develate\MusecodeCli\Process\MuseExecutable;
@@ -146,6 +147,12 @@ final class Muse
     public function models(): array
     {
         return (new PtyModelReader)->read($this->binary, $this->env, $this->timeout ?? 30.0);
+    }
+
+    /** MCP configuration shared by runs using this client's configuration home. */
+    public function mcp(): Mcp
+    {
+        return new Mcp(rtrim($this->configHome(), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'muse'.DIRECTORY_SEPARATOR.'settings.json');
     }
 
     public function quota(): Quota
