@@ -2,23 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Develate\MusecodeCli\Tests\Quota;
+namespace Develate\MusecodeCli\Tests\Models;
 
 use Develate\MusecodeCli\Exception\MuseException;
 use Develate\MusecodeCli\Exception\ProcessTimedOut;
 use Develate\MusecodeCli\Muse;
 use PHPUnit\Framework\TestCase;
 
-final class PtyQuotaReaderTest extends TestCase
+final class PtyModelReaderTest extends TestCase
 {
-    public function test_reads_quota_and_stops_the_child(): void
+    public function test_reads_models_and_stops_the_child(): void
     {
         $this->probe('success');
-    }
-
-    public function test_retries_until_subscription_usage_is_available(): void
-    {
-        $this->probe('retry');
     }
 
     public function test_timeout_stops_the_child(): void
@@ -40,18 +35,17 @@ final class PtyQuotaReaderTest extends TestCase
         }
         $pidFile = tempnam(sys_get_temp_dir(), 'muse-pid-');
         $cwdFile = tempnam(sys_get_temp_dir(), 'muse-cwd-');
-        $muse = new Muse(binary: dirname(__DIR__).'/Support/fake-muse-usage.php', env: [
+        $muse = new Muse(binary: dirname(__DIR__).'/Support/fake-muse-models.php', env: [
             'MUSE_TEST_PID' => $pidFile,
             'MUSE_TEST_CWD' => $cwdFile,
             'MUSE_TEST_MODE' => $mode,
-        ], timeout: $mode === 'retry' ? 9 : 2);
+        ], timeout: 3);
 
         try {
-            $quota = $muse->quota();
+            $models = $muse->models();
 
-            self::assertSame(31.0, $quota->currentUsedPercent);
-            self::assertSame('Muse Code Everyday Usage', $quota->planName);
-            self::assertSame(46.0, $quota->weeklyUsedPercent);
+            self::assertSame(['muse-spark-1.3', 'muse-spark-1.3-contributor'], array_map(static fn ($model) => $model->slug, $models));
+            self::assertSame('Your content may be used for product improvement.', $models[1]->description);
         } finally {
             $pid = (int) file_get_contents($pidFile);
             self::assertGreaterThan(0, $pid);

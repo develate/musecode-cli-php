@@ -10,16 +10,10 @@ if (getenv('MUSE_TEST_MODE') === 'exit') {
 }
 echo "\033[?25h";
 $command = trim((string) fgets(STDIN));
-if ($command !== '/upgrade') {
+if ($command !== '/model') {
     exit(2);
 }
-if (getenv('MUSE_TEST_MODE') === 'retry') {
-    echo "Session usage Input 0 Total 0\n";
-    if (trim((string) fgets(STDIN)) !== '/upgrade') {
-        exit(3);
-    }
-}
 if (getenv('MUSE_TEST_MODE') !== 'timeout') {
-    echo "You are currently subscribed to the Muse Code Everyday Usage usage plan.\nCurrent 31% used · Resets at 11:38 PM\nWeekly 46% used · Resets Sep 14 at 2:00 AM\nas of 9:50 PM\n";
+    echo "\033[15;3HChoose\033[15;10Hmodel\033[17;3Hmuse-spark-1.3\033[18;1H⟩\033[18;3H\033[1mmuse-spark-1.3-contributor\033[18;31H\033[22mYour content may be used for product improvement.\033[22;3H↑↓ move · enter confirm · esc go back";
 }
 sleep(30);

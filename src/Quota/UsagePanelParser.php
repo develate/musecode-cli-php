@@ -17,11 +17,24 @@ final class UsagePanelParser
     public function parse(string $output): ?Quota
     {
         $text = $this->plainText($output);
-        $start = strrpos($text, 'Subscription');
-        if ($start === false) {
+        if (preg_match_all('/You\s+are\s+currently\s+subscribed\s+to\s+the\s+(.+?)\s+usage\s+plan\./is', $text, $plans, PREG_OFFSET_CAPTURE) === 0) {
             return null;
         }
-        $text = substr($text, $start);
+        for ($index = count($plans[0]) - 1; $index >= 0; $index--) {
+            $planName = trim((string) preg_replace('/\s+/', ' ', $plans[1][$index][0]));
+            $start = $plans[0][$index][1];
+            $end = $plans[0][$index + 1][1] ?? strlen($text);
+            $quota = $this->windows(substr($text, $start, $end - $start), $planName);
+            if ($quota !== null) {
+                return $quota;
+            }
+        }
+
+        return null;
+    }
+
+    private function windows(string $text, string $planName): ?Quota
+    {
         $time = '(\d{1,2}:\d{2}\s*[AP]M)';
         if (preg_match('/\bCurrent\s+(\d+(?:\.\d+)?)%\s+used\s*·\s*Resets\s+at\s+'.$time.'/i', $text, $current) !== 1
             || preg_match('/\bWeekly\s+(\d+(?:\.\d+)?)%\s+used\s*·\s*Resets\s+([A-Z][a-z]{2}\s+\d{1,2})\s+at\s+'.$time.'/i', $text, $weekly) !== 1
@@ -29,6 +42,6 @@ final class UsagePanelParser
             return null;
         }
 
-        return new Quota((float) $current[1], (float) $weekly[1], trim($current[2]), trim($weekly[2]).' '.trim($weekly[3]));
+        return new Quota((float) $current[1], (float) $weekly[1], trim($current[2]), trim($weekly[2]).' '.trim($weekly[3]), $planName);
     }
 }

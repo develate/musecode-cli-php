@@ -11,5 +11,6 @@ final readonly class Quota
         public float $weeklyUsedPercent,
         public string $currentReset,
         public string $weeklyReset,
+        public ?string $planName = null,
     ) {}
 }

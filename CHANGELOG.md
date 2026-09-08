@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-08
+
+- Read subscription quota and plan name from `/upgrade`, and available models with descriptions from `/model`, using PTY/Expect.
+
 ## 2026-09-07
 
 - Add `Muse::quota()` using PTY/Expect to read current and weekly subscription usage with reset labels, bounded retries, and child-process cleanup.

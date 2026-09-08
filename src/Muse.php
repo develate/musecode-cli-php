@@ -6,6 +6,8 @@ namespace Develate\MusecodeCli;
 
 use Develate\MusecodeCli\Exception\InvalidOptions;
 use Develate\MusecodeCli\Exception\MuseNotFound;
+use Develate\MusecodeCli\Models\ModelInfo;
+use Develate\MusecodeCli\Models\PtyModelReader;
 use Develate\MusecodeCli\Process\MuseExecutable;
 use Develate\MusecodeCli\Quota\PtyQuotaReader;
 use Develate\MusecodeCli\Quota\Quota;
@@ -138,6 +140,12 @@ final class Muse
     public function isAvailable(): bool
     {
         return MuseExecutable::isAvailable($this->binary);
+    }
+
+    /** @return list<ModelInfo> */
+    public function models(): array
+    {
+        return (new PtyModelReader)->read($this->binary, $this->env, $this->timeout ?? 30.0);
     }
 
     public function quota(): Quota
