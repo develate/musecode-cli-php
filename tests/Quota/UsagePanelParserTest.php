@@ -35,6 +35,20 @@ final class UsagePanelParserTest extends TestCase
         self::assertSame('Muse Code Everyday Usage', $quota->planName);
     }
 
+    public function test_reads_an_exhausted_weekly_window_from_a_usage_limit_notice(): void
+    {
+        $output = "Usage limit reached · /upgrade\n  (https://accountscenter.meta.com/muse_code/?ep=xgrade) for increased limits,\n  or wait for usage to reset at Sep 14 at 2:00 AM";
+
+        $quota = (new UsagePanelParser)->parse($output);
+
+        self::assertNotNull($quota);
+        self::assertNull($quota->currentUsedPercent);
+        self::assertNull($quota->currentReset);
+        self::assertSame(100.0, $quota->weeklyUsedPercent);
+        self::assertSame('Sep 14 2:00 AM', $quota->weeklyReset);
+        self::assertNull($quota->planName);
+    }
+
     public function test_rejects_missing_incomplete_and_invalid_subscription_windows(): void
     {
         $parser = new UsagePanelParser;

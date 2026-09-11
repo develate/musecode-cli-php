@@ -18,7 +18,7 @@ final class UsagePanelParser
     {
         $text = $this->plainText($output);
         if (preg_match_all('/You\s+are\s+currently\s+subscribed\s+to\s+the\s+(.+?)\s+usage\s+plan\./is', $text, $plans, PREG_OFFSET_CAPTURE) === 0) {
-            return null;
+            return $this->usageLimit($text);
         }
         for ($index = count($plans[0]) - 1; $index >= 0; $index--) {
             $planName = trim((string) preg_replace('/\s+/', ' ', $plans[1][$index][0]));
@@ -30,7 +30,7 @@ final class UsagePanelParser
             }
         }
 
-        return null;
+        return $this->usageLimit($text);
     }
 
     private function windows(string $text, string $planName): ?Quota
@@ -43,5 +43,15 @@ final class UsagePanelParser
         }
 
         return new Quota((float) $current[1], (float) $weekly[1], trim($current[2]), trim($weekly[2]).' '.trim($weekly[3]), $planName);
+    }
+
+    private function usageLimit(string $text): ?Quota
+    {
+        $time = '(\d{1,2}:\d{2}\s*[AP]M)';
+        if (preg_match('/\bUsage\s+limit\s+reached\b.*?\b(?:usage\s+to\s+)?reset\s+at\s+([A-Z][a-z]{2}\s+\d{1,2})\s+at\s+'.$time.'/is', $text, $weekly) !== 1) {
+            return null;
+        }
+
+        return new Quota(null, 100.0, null, trim($weekly[1]).' '.trim($weekly[2]));
     }
 }

@@ -49,6 +49,7 @@ while {[clock seconds] < $deadline} {
     }
     expect {
         -re {as(?:\x1b\[[0-?]*[ -/]*[@-~]|\s)+of} {cleanup; exit 0}
+        -re {Usage(?:\x1b\[[0-?]*[ -/]*[@-~]|\s)+limit(?:\x1b\[[0-?]*[ -/]*[@-~]|\s)+reached} {cleanup; exit 0}
         -ex "\033\[6n" {send -- "\033\[1;1R"; exp_continue -continue_timer}
         timeout {}
         eof {cleanup; exit 1}

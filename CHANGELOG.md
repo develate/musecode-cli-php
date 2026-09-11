@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-11
+
+- Recognize Muse Code's `Usage limit reached` notice as an exhausted weekly quota window, including its reset time, instead of waiting for a full subscription panel to time out.
+
 ## 2026-09-08
 
 - Add `Muse::mcp()` to list, add, remove, enable, and disable native stdio and HTTP MCP server configurations with atomic settings writes.

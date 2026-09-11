@@ -7,10 +7,10 @@ namespace Develate\MusecodeCli\Quota;
 final readonly class Quota
 {
     public function __construct(
-        public float $currentUsedPercent,
-        public float $weeklyUsedPercent,
-        public string $currentReset,
-        public string $weeklyReset,
+        public ?float $currentUsedPercent,
+        public ?float $weeklyUsedPercent,
+        public ?string $currentReset,
+        public ?string $weeklyReset,
         public ?string $planName = null,
     ) {}
 }
