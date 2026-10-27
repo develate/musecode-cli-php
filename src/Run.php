@@ -7,6 +7,7 @@ namespace Develate\MusecodeCli;
 use Develate\MusecodeCli\Event\Event;
 use Develate\MusecodeCli\Exception\ProcessFailed;
 use Develate\MusecodeCli\Process\ProcessResult;
+use Develate\MusecodeCli\SessionLog\SessionLogReader;
 use Develate\MusecodeCli\Transport\RunRequest;
 use Develate\MusecodeCli\Transport\Transport;
 use Develate\MusecodeCli\Value\RunMetadata;
@@ -34,6 +35,7 @@ final class Run implements \IteratorAggregate
         private readonly RunMetadata $metadata,
         private readonly array $listeners,
         private readonly \Closure $onComplete,
+        private readonly ?SessionLogReader $usageReader = null,
     ) {
     }
 
@@ -95,6 +97,51 @@ final class Run implements \IteratorAggregate
         return array_values(array_filter($this->items, static fn (StreamItem $item): bool => $item instanceof Event));
     }
 
+    /**
+     * The result with the run's logged token usage attached, when the session
+     * log recorded any.
+     *
+     * The stream itself never carries token counts, so the durable log is the
+     * only source; a reading there replaces the stream's counters. Reading
+     * usage must never fail a turn: an absent or unreadable log keeps the
+     * stream's answer.
+     */
+    private function withSessionLogUsage(Result $result): Result
+    {
+        if ($this->usageReader === null || $result->sessionId === '' || ($result->runId ?? '') === '') {
+            return $result;
+        }
+
+        try {
+            $logged = $this->usageReader->readRun($result->sessionId, $result->runId);
+        } catch (\Throwable) {
+            return $result;
+        }
+
+        if ($logged === null) {
+            return $result;
+        }
+
+        if ($logged->usage->isEmpty() && $logged->model === null) {
+            return $result;
+        }
+
+        return new Result(
+            sessionId: $result->sessionId,
+            text: $result->text,
+            usage: $logged->usage->isEmpty() ? $result->usage : $logged->usage,
+            status: $result->status,
+            terminal: $result->terminal,
+            reason: $result->reason,
+            events: $result->events,
+            metadata: $result->metadata,
+            exitCode: $result->exitCode,
+            raw: $result->raw(),
+            runId: $result->runId,
+            model: $logged->model ?? $result->model,
+        );
+    }
+
     /** @return \Generator<int, StreamItem, void, void> */
     private function execute(): \Generator
     {
@@ -112,7 +159,7 @@ final class Run implements \IteratorAggregate
 
             /** @var ProcessResult $process */
             $process = $stream->getReturn();
-            $this->lastResult = $builder->build($this->metadata, $process->exitCode);
+            $this->lastResult = $this->withSessionLogUsage($builder->build($this->metadata, $process->exitCode));
             if (!$builder->hasTerminal()) {
                 // The process died without saying how the run ended: stderr is
                 // the only account of what happened.

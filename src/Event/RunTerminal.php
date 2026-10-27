@@ -24,6 +24,7 @@ final readonly class RunTerminal implements Event
         public ?string $sessionId,
         public Usage $usage,
         private array $raw = [],
+        public ?string $runId = null,
     ) {}
 
     public function isSuccess(): bool

@@ -15,6 +15,8 @@ final class ResultBuilder
 {
     private string $sessionId;
 
+    private ?string $runId = null;
+
     private ?RunTerminal $terminal = null;
 
     /** @var list<Event> */
@@ -39,6 +41,10 @@ final class ResultBuilder
 
         if ($item instanceof RunTerminal) {
             $this->terminal = $item;
+
+            if ($item->runId !== null && $item->runId !== '') {
+                $this->runId = $item->runId;
+            }
         }
     }
 
@@ -62,6 +68,7 @@ final class ResultBuilder
             metadata: $metadata,
             exitCode: $exitCode,
             raw: $terminal?->raw() ?? [],
+            runId: $this->runId,
         );
     }
 

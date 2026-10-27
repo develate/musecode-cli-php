@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Develate\MusecodeCli;
 
 use Develate\MusecodeCli\Exception\InvalidOptions;
+use Develate\MusecodeCli\SessionLog\SessionLogReader;
 use Develate\MusecodeCli\Transport\RunMode;
 use Develate\MusecodeCli\Transport\RunRequest;
 use Develate\MusecodeCli\Transport\Transport;
@@ -26,6 +27,7 @@ final class Session
         private readonly ?float $timeout = null,
         ?string $sessionId = null,
         private RunMode $nextMode = RunMode::Start,
+        private readonly ?SessionLogReader $usageReader = null,
     ) {
         $this->sessionId = $sessionId ?? $options->sessionId;
     }
@@ -75,6 +77,7 @@ final class Session
                     $this->nextMode = RunMode::Resume;
                 }
             },
+            usageReader: $this->usageReader,
         );
     }
 
@@ -97,6 +100,7 @@ final class Session
             timeout: $this->timeout,
             sessionId: $this->sessionId,
             nextMode: $this->nextMode,
+            usageReader: $this->usageReader,
         );
     }
 

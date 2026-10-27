@@ -52,6 +52,7 @@ final readonly class EventParser
             ?? Terminal::Failed;
 
         $usage = $payload['usage'] ?? $payload['tokenUsage'] ?? null;
+        $stream = is_array($payload['run_stream'] ?? null) ? $payload['run_stream'] : [];
 
         return new RunTerminal(
             terminal: $terminal,
@@ -60,6 +61,8 @@ final readonly class EventParser
             sessionId: $sessionId,
             usage: is_array($usage) ? Usage::fromArray($usage) : new Usage,
             raw: $raw,
+            runId: self::nullableString($payload['command_id'] ?? null)
+                ?? self::nullableString($stream['id'] ?? null),
         );
     }
 

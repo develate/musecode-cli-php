@@ -129,4 +129,79 @@ final class RunTest extends TestCase
             ->session(new SessionOptions(cwd: sys_get_temp_dir()))
             ->stream('  ');
     }
+
+    public function testResultCarriesLoggedUsageAndModel(): void
+    {
+        $dataHome = sys_get_temp_dir().DIRECTORY_SEPARATOR.'muse-run-'.bin2hex(random_bytes(8));
+        $dir = $dataHome.DIRECTORY_SEPARATOR.'muse'.DIRECTORY_SEPARATOR.'sessions'
+            .DIRECTORY_SEPARATOR.'2026'.DIRECTORY_SEPARATOR.'09'.DIRECTORY_SEPARATOR.'15'
+            .DIRECTORY_SEPARATOR.'session-one';
+        mkdir($dir, 0777, true);
+        file_put_contents($dir.DIRECTORY_SEPARATOR.'session.jsonl', (string) json_encode([
+            'payload_type' => 'runtime.session',
+            'payload' => [
+                'kind' => 'run',
+                'run_id' => 'run-one',
+                'event' => [
+                    'kind' => 'model_completed',
+                    'usage' => ['input_tokens' => 100, 'output_tokens' => 10, 'cached_tokens' => 60],
+                    'model' => 'muse-spark-1.3',
+                ],
+            ],
+        ])."\n");
+
+        try {
+            $transport = new ScriptedTransport([
+                Fixtures::terminal('completed', 'done', null, 'run-one', 'session-one'),
+            ]);
+            $result = (new Muse('muse', $transport, ['XDG_DATA_HOME' => $dataHome]))
+                ->session(new SessionOptions(cwd: sys_get_temp_dir()))
+                ->query('hi');
+
+            $this->assertSame('run-one', $result->runId);
+            $this->assertSame('muse-spark-1.3', $result->model);
+            $this->assertSame(40, $result->usage->inputTokens);
+            $this->assertSame(60, $result->usage->cachedTokens);
+            $this->assertSame(10, $result->usage->outputTokens);
+        } finally {
+            $this->remove($dataHome);
+        }
+    }
+
+    public function testMissingSessionLogKeepsTheStreamAnswer(): void
+    {
+        $transport = new ScriptedTransport([
+            Fixtures::terminal('completed', 'done', null, 'run-one', 'session-one'),
+        ]);
+        $result = (new Muse('muse', $transport, ['XDG_DATA_HOME' => sys_get_temp_dir().DIRECTORY_SEPARATOR.'muse-missing-'.bin2hex(random_bytes(8))]))
+            ->session(new SessionOptions(cwd: sys_get_temp_dir()))
+            ->query('hi');
+
+        $this->assertSame('run-one', $result->runId);
+        $this->assertNull($result->model);
+        $this->assertTrue($result->usage->isEmpty());
+    }
+
+    private function remove(string $path): void
+    {
+        if (! file_exists($path)) {
+            return;
+        }
+
+        if (is_file($path) || is_link($path)) {
+            unlink($path);
+
+            return;
+        }
+
+        foreach (scandir($path) ?: [] as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+
+            $this->remove($path.DIRECTORY_SEPARATOR.$entry);
+        }
+
+        rmdir($path);
+    }
 }

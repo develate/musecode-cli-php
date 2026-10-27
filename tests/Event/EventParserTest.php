@@ -67,6 +67,65 @@ final class EventParserTest extends TestCase
         $this->assertFalse($items[0]->isSuccess());
     }
 
+    public function testTerminalCarriesTheRunId(): void
+    {
+        $line = (string) json_encode([
+            'schema_version' => 1,
+            'stream' => ['kind' => 'session', 'id' => 'session-one'],
+            'sequence' => 13,
+            'payload_type' => 'run.terminal.completed',
+            'payload' => [
+                'kind' => 'run_terminal',
+                'command_id' => 'run-one',
+                'run_stream' => ['kind' => 'run', 'id' => 'run-one'],
+                'terminal' => 'completed',
+                'text' => 'done',
+                'reason' => null,
+            ],
+        ]);
+
+        $items = (new EventParser)->parseLine($line);
+
+        $this->assertCount(1, $items);
+        $this->assertInstanceOf(RunTerminal::class, $items[0]);
+        $this->assertSame('run-one', $items[0]->runId);
+    }
+
+    public function testTerminalFallsBackToTheRunStreamId(): void
+    {
+        $line = (string) json_encode([
+            'payload_type' => 'run.terminal.completed',
+            'stream' => ['kind' => 'session', 'id' => 'session-one'],
+            'payload' => [
+                'kind' => 'run_terminal',
+                'run_stream' => ['kind' => 'run', 'id' => 'run-two'],
+                'terminal' => 'completed',
+                'text' => 'done',
+            ],
+        ]);
+
+        $items = (new EventParser)->parseLine($line);
+
+        $this->assertInstanceOf(RunTerminal::class, $items[0]);
+        $this->assertSame('run-two', $items[0]->runId);
+    }
+
+    public function testEchoFixtureTerminalNamesItsRun(): void
+    {
+        $terminal = null;
+
+        foreach (Fixtures::echoSession() as $line) {
+            foreach ((new EventParser)->parseLine($line) as $item) {
+                if ($item instanceof RunTerminal) {
+                    $terminal = $item;
+                }
+            }
+        }
+
+        $this->assertInstanceOf(RunTerminal::class, $terminal);
+        $this->assertSame('a0fea426-9dfe-41a5-8a98-672ee7846c59', $terminal->runId);
+    }
+
     public function testMalformedJsonThrows(): void
     {
         $this->expectException(InvalidStreamJson::class);

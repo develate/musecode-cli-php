@@ -17,19 +17,25 @@ final class Fixtures
         ));
     }
 
-    public static function terminal(string $terminal, string $text, ?string $reason = null): string
-    {
+    public static function terminal(
+        string $terminal,
+        string $text,
+        ?string $reason = null,
+        ?string $commandId = null,
+        ?string $sessionId = null,
+    ): string {
         return (string) json_encode([
             'schema_version' => 1,
-            'stream' => ['kind' => 'session', 'id' => 'session-one'],
+            'stream' => ['kind' => 'session', 'id' => $sessionId ?? 'session-one'],
             'sequence' => 13,
             'payload_type' => 'run.terminal.'.$terminal,
-            'payload' => [
+            'payload' => array_filter([
                 'kind' => 'run_terminal',
+                'command_id' => $commandId,
                 'terminal' => $terminal,
                 'text' => $text,
                 'reason' => $reason,
-            ],
+            ], static fn (mixed $value): bool => $value !== null),
         ]);
     }
 

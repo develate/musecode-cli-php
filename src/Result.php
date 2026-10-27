@@ -29,6 +29,8 @@ final readonly class Result
         public RunMetadata $metadata,
         public int $exitCode,
         private array $raw,
+        public ?string $runId = null,
+        public ?string $model = null,
     ) {}
 
     public function isSuccess(): bool

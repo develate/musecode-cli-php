@@ -59,6 +59,15 @@ $result = $session->query('Continue where you left off.');
 The id is required: resuming "whatever ran last" is a TUI affordance that on a
 shared machine is not necessarily this caller's conversation.
 
+## Token usage
+
+The `exec --json` stream never reports token counts, so each result is
+completed from the run's durable session log: `$result->usage` sums the run's
+`model_completed` records (uncached input beside the cache counters, following
+Meta's convention that `input_tokens` holds the total with the cache inside
+it), and `$result->model` names the model that processed most of the run.
+`--no-session-log` runs and the echo provider simply report zeroes.
+
 ## Read-only helper runs
 
 Titles, commit messages and similar helper work must never write to the

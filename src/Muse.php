@@ -12,6 +12,7 @@ use Develate\MusecodeCli\Models\PtyModelReader;
 use Develate\MusecodeCli\Process\MuseExecutable;
 use Develate\MusecodeCli\Quota\PtyQuotaReader;
 use Develate\MusecodeCli\Quota\Quota;
+use Develate\MusecodeCli\SessionLog\SessionLogReader;
 use Develate\MusecodeCli\Transport\ExecTransport;
 use Develate\MusecodeCli\Transport\RunMode;
 use Develate\MusecodeCli\Transport\Transport;
@@ -65,6 +66,7 @@ final class Muse
             museVersion: $this->version() ?? 'unknown',
             options: $this->resolveOptions($options),
             timeout: $this->timeout,
+            usageReader: new SessionLogReader($this->env),
         );
     }
 
@@ -88,6 +90,7 @@ final class Muse
             timeout: $this->timeout,
             sessionId: $sessionId,
             nextMode: RunMode::Resume,
+            usageReader: new SessionLogReader($this->env),
         );
     }
 
